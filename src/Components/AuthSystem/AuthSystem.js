@@ -5,54 +5,62 @@ import {
   getAuth,
   signInWithEmailAndPassword,
   signInWithPopup,
+  updateProfile,
 } from "firebase/auth";
 import app from "../Firebase/Firebase.config";
 import Swal from "sweetalert2";
 import { useState } from "react";
 
 const AuthSystem = () => {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const errorFun = (e) => {
+    return <p>{error}</p>;
+  };
 
   const auth = getAuth(app);
   const googleAuth = new GoogleAuthProvider();
   const gitAuth = new GithubAuthProvider();
   //-------Sign up or Register-------/
-  const google = (e) => {
-    e.preventDefault();
 
-    signInWithPopup(auth, googleAuth)
-      .then((result) => {
-        // This gives you a Google Access Token. You can use it to access the Google API.
-        const credential = GoogleAuthProvider.credentialFromResult(result);
-        const token = credential.accessToken;
-        // The signed-in user info.
-        const user = result.user;
-        Swal.fire(
-          "Google Login Successfully",
-          "Explore our services",
-          "question"
-        );
+  const handelName = (e) => {
+    setName(e.target.value);
+  };
 
-        // IdP data available using getAdditionalUserInfo(result)
+  const UpdatName = (e) => {
+    updateProfile(auth.currentUser, {
+      displayName: name,
+    })
+      .then(() => {
+        // Profile updated!
         // ...
       })
       .catch((error) => {
-        // Handle Errors here.
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        // The email of the user's account used.
-        const email = error.customData.email;
-        // The AuthCredential type that was used.
-        const credential = GoogleAuthProvider.credentialFromError(error);
+        // An error occurred
         // ...
       });
   };
 
   const handleEmail = (e) => {
+    if (!/^\S+@\S+\.\S+$/.test(e.target.value)) {
+      setError("Please input valid email");
+      return;
+    }
+    setError("");
     setEmail(e.target.value);
   };
   const handelPassword = (e) => {
+    if (!/(?=.{8,})/.test(e.target.value)) {
+      setError("Please provide 8 digit password");
+      return;
+    } else if (!/(?=.*[a-zA-Z])/.test(e.target.value)) {
+      setError("Provide at list one letter");
+      return;
+    }
+    setError("");
     setPassword(e.target.value);
   };
 
@@ -62,6 +70,7 @@ const AuthSystem = () => {
       .then((userCredential) => {
         // Signed in
         const user = userCredential.user;
+        UpdatName();
         console.log(user);
         Swal.fire(
           "Email Register Successfully!",
@@ -106,6 +115,37 @@ const AuthSystem = () => {
       });
   };
 
+  const google = (e) => {
+    e.preventDefault();
+
+    signInWithPopup(auth, googleAuth)
+      .then((result) => {
+        // This gives you a Google Access Token. You can use it to access the Google API.
+        const credential = GoogleAuthProvider.credentialFromResult(result);
+        const token = credential.accessToken;
+        // The signed-in user info.
+        const user = result.user;
+        Swal.fire(
+          "Google Login Successfully",
+          "Explore our services",
+          "question"
+        );
+
+        // IdP data available using getAdditionalUserInfo(result)
+        // ...
+      })
+      .catch((error) => {
+        // Handle Errors here.
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        // The email of the user's account used.
+        const email = error.customData.email;
+        // The AuthCredential type that was used.
+        const credential = GoogleAuthProvider.credentialFromError(error);
+        // ...
+      });
+  };
+
   //----------Sign in or Login----------/
   const loginBtn = (e) => {
     e.preventDefault();
@@ -113,6 +153,7 @@ const AuthSystem = () => {
       .then((userCredential) => {
         // Signed in
         const user = userCredential.user;
+        console.log(user);
         Swal.fire("Login Successfully Done !", "Explore our site", "success");
         // ...
       })
@@ -122,7 +163,16 @@ const AuthSystem = () => {
       });
   };
 
-  return { google, handleEmail, handelPassword, signBtn, github, loginBtn };
+  return {
+    google,
+    handleEmail,
+    handelPassword,
+    signBtn,
+    github,
+    loginBtn,
+    errorFun,
+    handelName,
+  };
 };
 
 export default AuthSystem;
